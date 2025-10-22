@@ -1,280 +1,413 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  Button,
   Image,
-  FlatList,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
   ScrollView,
+  StyleSheet,
+  Modal,
+  Pressable,
+  SafeAreaView,
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// 🌐 Global Context
-const GlobalContext = createContext();
+const Stack = createNativeStackNavigator();
 
-const GlobalProvider = ({ children }) => {
-  const [themeColor] = useState("#ff4da6");
-  const [appName] = useState("💄 NOOR’s Global Makeup");
-  const [cart, setCart] = useState([]);
 
-  const addToCart = (item) => {
-    setCart([...cart, item]);
-    Alert.alert("🛍️ Order Placed", `${item.name} added successfully!`);
-  };
+function ProductList({ route }) {
+  const { title = "Products", products = [] } = route.params || {};
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selected, setSelected] = useState(null);
 
-  return (
-    <GlobalContext.Provider value={{ themeColor, appName, cart, addToCart }}>
-      {children}
-    </GlobalContext.Provider>
-  );
-};
-
-// 🏠 Home Screen
-function HomeScreen({ navigation }) {
-  const { appName, themeColor } = useContext(GlobalContext);
+  function onAddToCart(product) {
+    setSelected(product);
+    setModalVisible(true);
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColor }]}>
-      <Text style={styles.title}>{appName}</Text>
-      <TouchableOpacity
-        style={styles.mainButton}
-        onPress={() => navigation.navigate("Products")}
-      >
-        <Text style={styles.btnText}>🛍️ View Products</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.sectionContainer}>
+      <Text style={styles.sectionTitle}>{title}</Text>
 
-      <TouchableOpacity
-        style={styles.secondaryButton}
-        onPress={() => navigation.navigate("Cart")}
-      >
-        <Text style={styles.btnText}>🛒 View My Cart</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.productsGrid}>
+        {products.map((p, i) => (
+          <View key={i} style={styles.productCard}>
+            <Image source={{ uri: p.img }} style={styles.productImage} />
+            <Text style={styles.productName}>{p.name}</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => onAddToCart(p)}
+            >
+              <Text style={styles.addButtonText}>🛒 Add to Cart</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
 
-      <TouchableOpacity
-        style={styles.secondaryButton}
-        onPress={() => navigation.navigate("About")}
+      {/* Modal with product + thank you */}
+      <Modal
+        visible={modalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <Text style={styles.btnText}>ℹ️ About App</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            {selected && (
+              <>
+                <Image source={{ uri: selected.img }} style={styles.modalImage} />
+                <Text style={styles.modalTitle}>Thank you!</Text>
+                <Text style={styles.modalSubtitle}>
+                  {selected.name} has been added to your cart.
+                </Text>
+              </>
+            )}
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalBtn, { backgroundColor: "#4caf50" }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalBtnText}>Continue</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
-// 💅 Products Screen (with your real images)
-function ProductScreen() {
-  const { addToCart } = useContext(GlobalContext);
 
-  const products = [
+function HomeScreen({ navigation }) {
+  const categories = [
     {
-      id: "1",
-      name: "Matte Lipstick 💋",
-      price: "$15",
-      img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSe5pWiIkrmpRfpxFE2f6TVgLiQ1wAEwXBqXw&s",
+      name: "Winter",
+      img:
+        "https://saraclothes.com/cdn/shop/products/blk20454_blue_1_4.jpg?v=1614865317",
+      screen: "Winter",
     },
     {
-      id: "2",
-      name: "Liquid Foundation 🧴",
-      price: "$25",
-      img: "https://www.maybelline.com/-/media/project/loreal/brand-sites/mny/americas/us/face-makeup/foundation/dream-radiant-liquid-medium-coverage-hydrating-foundation/maybelline-foundation-dream-radiant-liquid-pure-beige-041554579147-o.jpg?rev=fb60bcd697f54e26aea7402c306db6b8&cx=0&cy=0&cw=760&ch=1130&hash=4098653043A82BA73E1AD1A87E2D2388",
+      name: "Summer",
+      img:
+        "https://cdn.shopify.com/s/files/1/0347/3225/files/Mens_SummerStyle_1_600x600.jpg?v=1724679846",
+      screen: "Summer",
     },
     {
-      id: "3",
-      name: "Eyeshadow Palette 🌈",
-      price: "$35",
-      img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQizgbAwmleVLAW5fIO5C7KzA6Q-qeeJlZAvw&s",
+      name: "Perfumes",
+      img:
+        "https://pk.sapphireonline.pk/dw/image/v2/BKSB_PRD/on/demandware.static/-/Sites-sapphire-master-catalog/default/dwe29b2e98/images/Sept25/30thSept25/000000FRL005_3.JPG?sw=1000&sh=1200",
+      screen: "Perfumes",
     },
     {
-      id: "4",
-      name: "Highlighter & Blush Palette ✨",
-      price: "$20",
-      img: "https://imagicmakeup.com.pk/cdn/shop/files/E9z8IMAGIC-New-6-color-Hybrid-Highlight-Blush-Palette-Rouge-Makeup-Blush-Palet-Blush-Contour-Shadow-Facial.png?v=1688378489",
+      name: "Sale",
+      img:
+        "https://cdn.vectorstock.com/i/1000v/71/50/sale-of-women-s-clothing-vector-18817150.jpg",
+      screen: "Sale",
     },
   ];
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <Image source={{ uri: item.img }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productPrice}>{item.price}</Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => addToCart(item)}
-      >
-        <Text style={styles.addBtnText}>Add to Cart</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
-    <FlatList
-      data={products}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContainer}
-    />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ alignItems: "center", paddingBottom: 40 }}>
+        <Text style={styles.appTitle}>🛍️ Shopping App</Text>
+
+        <View style={styles.grid}>
+          {categories.map((c, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.catCard}
+              onPress={() => navigation.navigate(c.screen)}
+              activeOpacity={0.9}
+            >
+              <Image source={{ uri: c.img }} style={styles.catImage} />
+              <Text style={styles.catTitle}>{c.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-// 🛒 Cart Screen
-function CartScreen() {
-  const { cart, themeColor } = useContext(GlobalContext);
+/* -----------------------
+   Category Screens
+------------------------ */
+function WinterScreen({ navigation }) {
+  const products = [
+    {
+      name: "Blue Embroidered Pret",
+      img:
+        "https://saraclothes.com/cdn/shop/products/blk20454_blue_1_4.jpg?v=1614865317",
+    },
+    {
+      name: "Velvet Unstitched Fabric",
+      img:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFF6BroJ3kLU8gydFdMGCEACRCmjB6FbUiaQ&s",
+    },
+    {
+      name: "Khaddar Fancy Pret",
+      img:
+        "https://oaks.pk/cdn/shop/files/Women_Pret_Dyed_OW2P-2408008-1.jpg?v=1748264268",
+    },
+  ];
 
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: "#fff", paddingVertical: 20 },
-      ]}
-    >
-      <Text style={[styles.title, { color: themeColor }]}>🛍️ My Orders</Text>
-
-      {cart.length === 0 ? (
-        <Text style={{ color: "#555", marginTop: 20 }}>No items added yet.</Text>
-      ) : (
-        cart.map((item, index) => (
-          <View key={index} style={styles.cartItem}>
-            <Image source={{ uri: item.img }} style={styles.cartImage} />
-            <View>
-              <Text style={styles.cartName}>{item.name}</Text>
-              <Text style={styles.cartPrice}>{item.price}</Text>
-            </View>
-          </View>
-        ))
-      )}
-
-      {cart.length > 0 && (
+    <SafeAreaView style={styles.sectionContainer}>
+      <Text style={styles.sectionHeader}>❄️ Winter Collection</Text>
+      <View style={styles.subRow}>
         <TouchableOpacity
-          style={styles.placeOrderBtn}
+          style={styles.subBtn}
           onPress={() =>
-            Alert.alert("🎉 Thank You!", "Your order has been placed successfully!")
+            navigation.navigate("ProductList", { title: "Winter • Pret", products })
           }
         >
-          <Text style={styles.placeOrderText}>Place Order</Text>
+          <Text style={styles.subBtnText}>Pret</Text>
         </TouchableOpacity>
-      )}
-    </ScrollView>
+
+        <TouchableOpacity
+          style={styles.subBtn}
+          onPress={() =>
+            navigation.navigate("ProductList", {
+              title: "Winter • Unstitched",
+              products: products,
+            })
+          }
+        >
+          <Text style={styles.subBtnText}>Unstitched</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// 💖 About Screen
-function AboutScreen() {
+function SummerScreen({ navigation }) {
+  const products = [
+    {
+      name: "Cotton Printed Pret",
+      img:
+        "https://cdn.shopify.com/s/files/1/0347/3225/files/Mens_SummerStyle_1_600x600.jpg?v=1724679846",
+    },
+    {
+      name: "Lawn Unstitched Fabric",
+      img:
+        "https://www.gulahmedshop.com/cdn/shop/files/gul-rubia-lawn-unstitched-fabric-cotton-bracken-fullshot-side1.jpg?v=1758382969",
+    },
+  ];
+
   return (
-    <View style={styles.aboutContainer}>
-      <Text style={styles.aboutTitle}>About NOOR’s App 💄</Text>
-      <Text style={styles.aboutText}>
-        NOOR’s Global Makeup App is a modern beauty experience where users can
-        explore and order high-quality makeup products globally. ✨{"\n\n"}
-        💋 Trusted Brands {"\n"}
-        🌎 Worldwide Delivery {"\n"}
-        💅 Advanced Beauty Catalog
-      </Text>
-    </View>
+    <SafeAreaView style={styles.sectionContainer}>
+      <Text style={styles.sectionHeader}>🌞 Summer Collection</Text>
+      <View style={styles.subRow}>
+        <TouchableOpacity
+          style={styles.subBtn}
+          onPress={() =>
+            navigation.navigate("ProductList", { title: "Summer • Pret", products })
+          }
+        >
+          <Text style={styles.subBtnText}>Pret</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.subBtn}
+          onPress={() =>
+            navigation.navigate("ProductList", {
+              title: "Summer • Unstitched",
+              products,
+            })
+          }
+        >
+          <Text style={styles.subBtnText}>Unstitched</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// 🧭 Navigation
-const Stack = createNativeStackNavigator();
+function PerfumesScreen({ navigation }) {
+  const men = [
+    {
+      name: "Men's Perfume",
+      img:
+        "https://theperfumeclub.pk/cdn/shop/collections/WhatsApp_Image_2025-05-31_at_16.18.50_2.jpg?v=1754909028",
+    },
+  ];
+  const women = [
+    {
+      name: "Women's Perfume",
+      img:
+        "https://pk.sapphireonline.pk/dw/image/v2/BKSB_PRD/on/demandware.static/-/Sites-sapphire-master-catalog/default/dwe29b2e98/images/Sept25/30thSept25/000000FRL005_3.JPG?sw=1000&sh=1200",
+    },
+  ];
 
+  return (
+    <SafeAreaView style={styles.sectionContainer}>
+      <Text style={styles.sectionHeader}>🌸 Perfumes</Text>
+      <View style={styles.subRow}>
+        <TouchableOpacity
+          style={styles.subBtn}
+          onPress={() =>
+            navigation.navigate("ProductList", { title: "Perfumes • Men", products: men })
+          }
+        >
+          <Text style={styles.subBtnText}>Men</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.subBtn}
+          onPress={() =>
+            navigation.navigate("ProductList", { title: "Perfumes • Women", products: women })
+          }
+        >
+          <Text style={styles.subBtnText}>Women</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function SaleScreen({ navigation }) {
+  const saleProducts = [
+    {
+      name: "Hot Sale Banner",
+      img:
+        "https://cdn.vectorstock.com/i/1000v/71/50/sale-of-women-s-clothing-vector-18817150.jpg",
+    },
+  ];
+
+  return (
+    <SafeAreaView style={styles.sectionContainer}>
+      <Text style={styles.sectionHeader}>🔥 Sale</Text>
+      <TouchableOpacity
+        style={styles.saleCard}
+        onPress={() =>
+          navigation.navigate("ProductList", { title: "Sale Items", products: saleProducts })
+        }
+      >
+        <Image
+          source={{
+            uri:
+              "https://cdn.vectorstock.com/i/1000v/71/50/sale-of-women-s-clothing-vector-18817150.jpg",
+          }}
+          style={styles.saleImage}
+        />
+        <Text style={styles.saleText}>Click to view sale item</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+/* -----------------------
+   Main App Navigator
+------------------------ */
 export default function App() {
   return (
-    <GlobalProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            headerStyle: { backgroundColor: "#ff4da6" },
-            headerTintColor: "#fff",
-            headerTitleStyle: { fontWeight: "bold" },
-          }}
-        >
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Products" component={ProductScreen} />
-          <Stack.Screen name="Cart" component={CartScreen} />
-          <Stack.Screen name="About" component={AboutScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </GlobalProvider>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerTintColor: "#111" }}>
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Winter" component={WinterScreen} />
+        <Stack.Screen name="Summer" component={SummerScreen} />
+        <Stack.Screen name="Perfumes" component={PerfumesScreen} />
+        <Stack.Screen name="Sale" component={SaleScreen} />
+        <Stack.Screen name="ProductList" component={ProductList} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-// 🎨 Styles
+/* -----------------------
+   Styles
+------------------------ */
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  title: { fontSize: 28, color: "white", fontWeight: "bold", marginBottom: 20 },
-  mainButton: {
+  container: { flex: 1, backgroundColor: "#fffaf5", paddingTop: 16, alignItems: "center" },
+  appTitle: { fontSize: 22, fontWeight: "700", marginBottom: 12, color: "#d81b60" },
+  grid: { width: "100%", flexDirection: "row", flexWrap: "wrap", justifyContent: "center" },
+  catCard: {
+    width: "44%",
+    margin: 8,
+    borderRadius: 12,
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    margin: 8,
-    width: 220,
-    alignItems: "center",
-  },
-  secondaryButton: {
-    backgroundColor: "#ffe6f7",
-    padding: 12,
-    borderRadius: 12,
-    margin: 8,
-    width: 220,
-    alignItems: "center",
-  },
-  btnText: { color: "#ff4da6", fontSize: 16, fontWeight: "bold" },
-
-  listContainer: { padding: 15, backgroundColor: "#fff" },
-  card: {
-    backgroundColor: "#fff0f6",
-    borderRadius: 15,
-    padding: 15,
-    alignItems: "center",
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
     elevation: 4,
+    alignItems: "center",
+    overflow: "hidden",
+    paddingBottom: 12,
   },
-  productImage: { width: 200, height: 200, borderRadius: 20 },
-  productName: { fontSize: 18, marginTop: 10, color: "#ff4da6" },
-  productPrice: { color: "#333", marginBottom: 8 },
-  addButton: {
-    backgroundColor: "#ff4da6",
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  addBtnText: { color: "#fff", fontWeight: "bold" },
+  catImage: { width: "100%", height: 140 },
+  catTitle: { fontSize: 16, fontWeight: "700", marginTop: 8, color: "#333" },
 
-  cartItem: {
-    flexDirection: "row",
-    backgroundColor: "#ffe6f7",
+  sectionContainer: { flex: 1, alignItems: "center", padding: 16, backgroundColor: "#fff" },
+  sectionHeader: { fontSize: 20, fontWeight: "700", marginBottom: 12, color: "#d81b60" },
+
+  subRow: { flexDirection: "row", width: "100%", justifyContent: "space-around", marginTop: 12 },
+  subBtn: {
+    backgroundColor: "#ff6b6b",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 10,
-    padding: 10,
-    marginVertical: 6,
-    width: "90%",
+    width: "40%",
     alignItems: "center",
   },
-  cartImage: { width: 70, height: 70, borderRadius: 10, marginRight: 10 },
-  cartName: { fontSize: 16, color: "#ff4da6", fontWeight: "bold" },
-  cartPrice: { color: "#333" },
-  placeOrderBtn: {
-    backgroundColor: "#ff4da6",
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
-  },
-  placeOrderText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  subBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 
-  aboutContainer: { flex: 1, padding: 20, backgroundColor: "#ffe6f0" },
-  aboutTitle: {
-    fontSize: 26,
-    color: "#ff4da6",
-    marginBottom: 10,
-    fontWeight: "bold",
+  productsGrid: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    paddingBottom: 30,
   },
-  aboutText: { fontSize: 16, color: "#333", lineHeight: 22 },
-});
+  productCard: {
+    width: "45%",
+    margin: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    elevation: 4,
+    alignItems: "center",
+    padding: 10,
+  },
+  productImage: { width: "100%", height: 180, borderRadius: 8, marginBottom: 8 },
+  productName: { fontSize: 15, fontWeight: "700", color: "#333", textAlign: "center" },
+
+  addButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  addButtonText: { color: "#fff", fontWeight: "700" },
+
+  saleCard: {
+    width: "95%",
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 4,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  saleImage: { width: "100%", height: 220, resizeMode: "contain" },
+  saleText: { fontSize: 16, padding: 12, color: "#333", fontWeight: "700" },
+
+  /* Modal */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  modalImage: { width: 260, height: 320, borderRadius: 8, marginBottom: 12 },
+  modalTitle: { fontSize: 20, fontWeight: "800", marginBottom: 6 },
+  modalSubtitle: { fontSize: 14, color: "#555", textAlign: "center", marginBottom: 12 },
+  modalButtons: { flexDirection: "row", gap: 10 },
+  modalBtn: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, marginHorizontal: 6 },
+  modalBtnText: { color: "#fff", fontWeight: "700" },
+  });
 
 
 
